@@ -1,9 +1,9 @@
 	;; Electronic 6 die for Digirule 2U
 	org 0
 
+	speed 5
+	
 start	initsp
-
-	speed 128
 
 	;; Seed LFSR
 	call lfsr_init
@@ -24,8 +24,8 @@ wait_loop_unpress
 
 	;; Roll the die
 roll_die
+  	copylr 0x3f,_dr
 	call get_number
-	call n_shuffle_leds
 	call display_number
 	jump wait_loop_press
 
@@ -44,82 +44,86 @@ display_number_finish
 
 	;; Random number 1 to 6
 get_number
-	copylr 0x00,number
-	copylr 3,counter
+	copylr 0,number
+	copylr 5,counter
 get_number_load_loop
 	call lfsr_shift
 	shiftrl number
 	decrjz counter
 	jump get_number_load_loop
-	subla 2
-	btstsc _c,_sr
-	jump get_number
-	decr number
-	return
-
-n_shuffle_leds
-	copyli 0x08,counter
-	call shuffle_leds
-	decrjz counter
-	jump n_shuffle_leds
-	return
-
-shuffle_leds
-	copyli 0x01,_dr
-shuffle_leds_loop
-	shiftrl _dr
-	btstss 6,_dr
-	jump shuffle_leds_loop
+ 	; Number contains a decimal from [0,0.96875]
+  	bclr _c,_sr
+   	copyla 0
+    	; Multiply number by 6
+    	addra number
+     	addra number
+      	addra number
+      	addra number
+      	addra number
+      	addra number
+       	; Shift out decimal part
+        	andla 0xe0
+         	copyar number
+	shiftrr number
+ 	shiftrr number
+  	shiftrr number
+   	shiftrr number
+    	shiftrr number
+	incr number
 	return
 
 	;; LFSR  routines
 lfsr_init
 	randa
-	copyar lfsr + 0
+	copyar lfsr
 	randa
-	copyar lfsr + 1
+	copyar lfsr+1
 	randa
-	copyar lfsr + 2
+	copyar lfsr+2
 	randa
-	copyar lfsr + 3
+	copyar lfsr+3
 	randa
-	copyar lfsr + 4
+	copyar lfsr+4
 	randa
-	copyar lfsr + 5
+	copyar lfsr+5
 	randa
-	copyar lfsr + 6
+	copyar lfsr+6
 	randa
-	copyar lfsr + 7
+	copyar lfsr+7
 	return
 
 	;; Taps at 64, 63, 61, 60
 	;; (see https://www.xilinx.com/support/documentation/application_notes/xapp052.pdf)
 lfsr_shift
 	copyrr lfsr+7,lfsr_ws
-	;; Bit 64
 	copyra lfsr_ws
-	;; Bit 63
-	shiftrl lfsr_ws
-	xorra lfsr_ws
-	;; Bit 61
-	shiftrl lfsr_ws
-	shiftrl lfsr_ws
-	xorra lfsr_ws
-	;; Bit 60
-	shiftrl lfsr
-	xorra lfsr_ws
-	andla 0x80
+ 	;; Bit 60
+ 	shiftrl lfsr_ws
+  	shiftrl lfsr_ws
+   	shiftrl lfsr_ws
+ 	xorra lfsr_ws
+  	;; Bit 61
+   	shiftrl lfsr_ws
+    	xorra lfsr_ws
+     	;; Bit 63
+      	shiftrl lfsr_ws
+       	shiftrl lfsr_ws
+        	xorra lfsr_ws
+	;; Bit 64
+ 	shiftrl lfsr_ws
+  	xorra lfsr_ws
+	andla 0x01
 	;; Shift the register
-	shiftrr lfsr + 7
-	shiftrr lfsr + 6
-	shiftrr lfsr + 5
-	shiftrr lfsr + 4
-	shiftrr lfsr + 3
-	shiftrr lfsr + 2
-	shiftrr lfsr + 1
-	shiftrr lfsr + 0
-	orra lfsr + 7
-	copyar lfsr + 7
+	shiftrr lfsr+7
+	shiftrr lfsr+6
+	shiftrr lfsr+5
+	shiftrr lfsr+4
+	shiftrr lfsr+3
+	shiftrr lfsr+2
+	shiftrr lfsr+1
+	shiftrr lfsr
+	xorra lfsr
+	copyar lfsr
 	return
 
 flash_leds
@@ -130,8 +134,42 @@ flash_leds_loop
 	nop
 	nop
 	nop
+ 	nop
+	nop
+	nop
+	nop
+ 	nop
+	nop
+	nop
+	nop
+  	nop
+	nop
+	nop
+	nop
+ 	nop
+  	nop
+	nop
+	nop
+	nop
 	copylr 0x3f,_dr
 	nop
+	nop
+	nop
+	nop
+ 	nop
+	nop
+	nop
+	nop
+ 	nop
+	nop
+	nop
+	nop
+  	nop
+	nop
+	nop
+	nop
+ 	nop
+  	nop
 	nop
 	nop
 	nop
@@ -140,7 +178,7 @@ flash_leds_loop
 	return
 
 	;; Variables
-	org 252-11
+	org 240
 
 	;; The random number [1, 6]
 number	space 1
